@@ -7,10 +7,9 @@ const SKIP_VALUES = [-30, -15, -10, -5, -1, 1, 5, 10, 15, 30];
 let skipButtonsTimer = null;
 let currentSegment = null;
 let advancingAfterEnded = false;
-let audioContext = null;
-let audioAnalyser = null;
-let audioSourceNode = null;
 let audioVisualizerAnimationId = null;
+let audioWaveformData = null;
+let audioVisualizerMedia = null;
 
 function getDataFileName() {
   const params = new URLSearchParams(window.location.search);
@@ -305,7 +304,7 @@ function loadHtmlMedia(mediaUrl, autoplay, mediaType, startSeconds) {
   currentMode = 'html';
 
   if (mediaType === 'audio') {
-    initAudioVisualizer(media);
+    initAudioVisualizer(media, mediaUrl);
   }
 }
 
@@ -813,69 +812,114 @@ function destroyAudioVisualizer() {
     audioVisualizerAnimationId = null;
   }
 
-  if (audioSourceNode) {
-    try {
-      audioSourceNode.disconnect();
-    } catch (error) {
-      // ignore
-    }
-    audioSourceNode = null;
-  }
-
-  if (audioAnalyser) {
-    try {
-      audioAnalyser.disconnect();
-    } catch (error) {
-      // ignore
-    }
-    audioAnalyser = null;
-  }
+  audioWaveformData = null;
+  audioVisualizerMedia = null;
 }
 
-function initAudioVisualizer(media) {
+function initAudioVisualizer(media, mediaUrl) {
   const canvas = document.getElementById('audioVisualizer');
 
   if (!canvas) {
     return;
   }
 
-  drawIdleAudioVisualizer(canvas);
+  audioVisualizerMedia = media;
+  audioWaveformData = createFallbackWaveformData(120);
+  drawAudioVisualizerFrame(canvas, media, audioWaveformData);
+  startAudioVisualizerLoop(canvas, media);
 
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  loadDecodedWaveform(mediaUrl)
+    .then(data => {
+      if (audioVisualizerMedia === media && data && data.length) {
+        audioWaveformData = data;
+        drawAudioVisualizerFrame(canvas, media, audioWaveformData);
+      }
+    })
+    .catch(() => {
+      // אם הדפדפן חוסם ניתוח קובץ חיצוני, נשארת תצוגת ברירת מחדל.
+      // האודיו עצמו ממשיך להתנגן כרגיל דרך תגית audio.
+    });
+}
 
-  if (!AudioContextClass) {
-    return;
-  }
-
-  try {
-    if (!audioContext) {
-      audioContext = new AudioContextClass();
+function startAudioVisualizerLoop(canvas, media) {
+  function draw() {
+    if (audioVisualizerMedia !== media) {
+      return;
     }
 
-    audioAnalyser = audioContext.createAnalyser();
-    audioAnalyser.fftSize = 256;
-    audioAnalyser.smoothingTimeConstant = 0.82;
-
-    audioSourceNode = audioContext.createMediaElementSource(media);
-    audioSourceNode.connect(audioAnalyser);
-    audioAnalyser.connect(audioContext.destination);
-
-    media.addEventListener('play', () => {
-      if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume().catch(() => {});
-      }
-    });
-
-    drawAudioVisualizer(canvas, audioAnalyser);
-  } catch (error) {
-    drawIdleAudioVisualizer(canvas);
+    drawAudioVisualizerFrame(canvas, media, audioWaveformData || createFallbackWaveformData(120));
+    audioVisualizerAnimationId = requestAnimationFrame(draw);
   }
+
+  draw();
+}
+
+async function loadDecodedWaveform(mediaUrl) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextClass || !mediaUrl) {
+    return null;
+  }
+
+  const response = await fetch(mediaUrl, { mode: 'cors' });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const context = new AudioContextClass();
+
+  try {
+    const audioBuffer = await context.decodeAudioData(arrayBuffer);
+    return extractWaveformData(audioBuffer, 120);
+  } finally {
+    if (typeof context.close === 'function') {
+      context.close().catch(() => {});
+    }
+  }
+}
+
+function extractWaveformData(audioBuffer, bars) {
+  const channelData = audioBuffer.getChannelData(0);
+  const samplesPerBar = Math.max(1, Math.floor(channelData.length / bars));
+  const result = [];
+
+  for (let i = 0; i < bars; i++) {
+    const start = i * samplesPerBar;
+    const end = Math.min(channelData.length, start + samplesPerBar);
+    let sum = 0;
+
+    for (let j = start; j < end; j++) {
+      sum += Math.abs(channelData[j]);
+    }
+
+    result.push(Math.min(1, sum / Math.max(1, end - start) * 3.5));
+  }
+
+  return result;
+}
+
+function createFallbackWaveformData(bars) {
+  const result = [];
+
+  for (let i = 0; i < bars; i++) {
+    const value =
+      0.18 +
+      0.42 * Math.abs(Math.sin(i * 0.21)) +
+      0.25 * Math.abs(Math.sin(i * 0.047 + 1.7));
+
+    result.push(Math.min(1, value));
+  }
+
+  return result;
 }
 
 function resizeCanvasToDisplaySize(canvas) {
   const rect = canvas.getBoundingClientRect();
-  const width = Math.max(1, Math.floor(rect.width * window.devicePixelRatio));
-  const height = Math.max(1, Math.floor(rect.height * window.devicePixelRatio));
+  const ratio = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.floor(rect.width * ratio));
+  const height = Math.max(1, Math.floor(rect.height * ratio));
 
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
@@ -883,66 +927,37 @@ function resizeCanvasToDisplaySize(canvas) {
   }
 }
 
-function drawAudioVisualizer(canvas, analyser) {
-  const ctx = canvas.getContext('2d');
-  const data = new Uint8Array(analyser.frequencyBinCount);
-
-  function draw() {
-    resizeCanvasToDisplaySize(canvas);
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    analyser.getByteFrequencyData(data);
-
-    drawAudioBars(ctx, width, height, data, '#eaf0f7', '#7c8fa6');
-
-    audioVisualizerAnimationId = requestAnimationFrame(draw);
-  }
-
-  draw();
-}
-
-function drawIdleAudioVisualizer(canvas) {
+function drawAudioVisualizerFrame(canvas, media, data) {
   const ctx = canvas.getContext('2d');
 
   resizeCanvasToDisplaySize(canvas);
 
   const width = canvas.width;
   const height = canvas.height;
-  const data = new Uint8Array(80);
+  const duration = media && media.duration && !isNaN(media.duration) ? media.duration : 0;
+  const current = media && media.currentTime ? media.currentTime : 0;
+  const progress = duration ? Math.max(0, Math.min(1, current / duration)) : 0;
 
-  for (let i = 0; i < data.length; i++) {
-    data[i] = 35 + 65 * Math.abs(Math.sin(i * 0.37));
-  }
-
-  drawAudioBars(ctx, width, height, data, '#eaf0f7', '#b6c4d4');
+  drawAudioBars(ctx, width, height, data, progress);
 }
 
-function drawAudioBars(ctx, width, height, data, backgroundColor, barColor) {
+function drawAudioBars(ctx, width, height, data, progress) {
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = backgroundColor;
+  ctx.fillStyle = '#eaf0f7';
   ctx.fillRect(0, 0, width, height);
 
-  const bars = 80;
-  const step = Math.max(1, Math.floor(data.length / bars));
-  const gap = Math.max(1, Math.floor(width / bars * 0.25));
+  const bars = data.length;
+  const gap = Math.max(1, Math.floor(width / bars * 0.22));
   const barWidth = Math.max(2, Math.floor((width - gap * (bars - 1)) / bars));
-
-  ctx.fillStyle = barColor;
+  const progressX = width * progress;
 
   for (let i = 0; i < bars; i++) {
-    let sum = 0;
-
-    for (let j = 0; j < step; j++) {
-      sum += data[i * step + j] || 0;
-    }
-
-    const value = sum / step / 255;
-    const barHeight = Math.max(3, value * height * 0.9);
+    const value = Math.max(0.05, Math.min(1, data[i] || 0));
+    const barHeight = Math.max(3, value * height * 0.78);
     const x = i * (barWidth + gap);
     const y = (height - barHeight) / 2;
 
+    ctx.fillStyle = x <= progressX ? '#64748b' : '#b6c4d4';
     ctx.fillRect(x, y, barWidth, barHeight);
   }
 }
