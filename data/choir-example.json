@@ -1,6 +1,7 @@
 {
   "libraryTitle": "חזרת מקהלה - דוגמה",
   "defaultGroup": "all",
+
   "groups": [
     {
       "id": "soprano",
@@ -23,6 +24,7 @@
       "label": "כולם"
     }
   ],
+
   "groups2": [
     {
       "id": "soprano2",
@@ -41,6 +43,7 @@
       "label": "בס 2"
     }
   ],
+
   "segments": {
     "soprano": [
       {
@@ -56,6 +59,7 @@
         "start": 75
       }
     ],
+
     "alto": [
       {
         "title": "אלט - פתיחה",
@@ -70,6 +74,7 @@
         "start": 150
       }
     ],
+
     "tenor": [
       {
         "title": "טנור - התחלה",
@@ -78,6 +83,7 @@
         "start": 30
       }
     ],
+
     "bass": [
       {
         "title": "בס - התחלה",
@@ -86,6 +92,7 @@
         "start": 45
       }
     ],
+
     "all": [
       {
         "title": "כולם - פתיחה",
@@ -108,21 +115,9 @@
         "title": "דוגמה לקובץ MP4 מכתובת ישירה",
         "source": "url",
         "url": "https://example.com/video.mp4"
-      },
-      {
-        "title": "דוגמה לקובץ MP3 מכתובת ישירה",
-        "source": "url",
-        "type": "audio",
-        "url": "https://example.com/audio.mp3",
-        "start": 0
-      },
-      {
-        "title": "דוגמה לקובץ אודיו מ-Google Drive",
-        "source": "gdrive",
-        "type": "audio",
-        "fileId": "PUT_GOOGLE_DRIVE_AUDIO_FILE_ID_HERE"
       }
     ],
+
     "soprano2": [
       {
         "title": "סופרן 2 - קטע לדוגמה",
@@ -131,6 +126,7 @@
         "start": 120
       }
     ],
+
     "alto2": [
       {
         "title": "אלט 2 - קטע לדוגמה",
@@ -139,7 +135,9 @@
         "start": 90
       }
     ],
+
     "tenor2": [],
+
     "bass2": []
   }
 }

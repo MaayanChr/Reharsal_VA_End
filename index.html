@@ -71,12 +71,24 @@
     <section class="buttons-panel">
 
         <div class="groups-title-row">
-		  <h3>קולות</h3>
+          <h3>קולות</h3>
 
-		  <button id="openFullBtn" type="button">
-			פתח במסך מלא
-		  </button>
-		</div>
+          <div class="playback-options" aria-label="אפשרויות נגינה">
+            <label>
+              <input type="checkbox" id="playAllCheckbox">
+              נגן הכל ברצף
+            </label>
+
+            <label>
+              <input type="checkbox" id="repeatSegmentCheckbox">
+              חזור על הקטע
+            </label>
+          </div>
+
+          <button id="openFullBtn" type="button">
+            פתח במסך מלא
+          </button>
+        </div>
 
         <div id="groupButtons"
              class="group-buttons">

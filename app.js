@@ -3,10 +3,10 @@ let libraryData = null;
 let currentGroup = null;
 let youtubeReady = false;
 let currentMode = null; // youtube / html / null
-let currentHtmlMediaType = null; // video / audio / null
 const SKIP_VALUES = [-30, -15, -10, -5, -1, 1, 5, 10, 15, 30];
 let skipButtonsTimer = null;
 let currentSegment = null;
+let advancingAfterEnded = false;
 
 function getDataFileName() {
   const params = new URLSearchParams(window.location.search);
@@ -43,8 +43,9 @@ async function loadLibraryData() {
     renderGroupButtons();
     renderSegmentButtons();
     initMobileMode();
-	createSkipButtons();
-	startSkipButtonsUpdater();
+    createSkipButtons();
+    startSkipButtonsUpdater();
+    setupPlaybackOptions();
 
   } catch (error) {
     document.getElementById('currentTitle').innerHTML =
@@ -92,6 +93,7 @@ function renderGroupRow(containerId, groups, hideIfAllEmpty) {
       }
 
       currentGroup = group.id;
+      currentSegment = null;
       clearPlayer();
 
       document.getElementById('currentTitle').textContent =
@@ -162,12 +164,12 @@ function loadSegment(segment, autoplay) {
   currentSegment = segment;
   renderSegmentButtons();
   const currentTitle = document.getElementById('currentTitle');
-
+  
   const groupLabel = getCurrentGroupLabel();
   currentTitle.textContent = groupLabel
-	  ? `${groupLabel} -----> ${segment.title}`
-	  : segment.title;
-
+    ? `${groupLabel} -----> ${segment.title}`
+    : segment.title;
+  
   applyTextDirection(currentTitle, segment);
 
   const source = segment.source || 'youtube';
@@ -178,21 +180,13 @@ function loadSegment(segment, autoplay) {
   }
 
   if (source === 'gdrive') {
-    loadHtmlMedia(
-      getGoogleDriveDirectUrl(segment.fileId),
-      autoplay,
-      getSegmentMediaType(segment, 'video')
-    );
+    loadHtmlMedia(getGoogleDriveDirectUrl(segment.fileId), autoplay, getSegmentMediaType(segment));
     showMobilePlayer();
     return;
   }
 
-  if (source === 'url' || source === 'audio' || source === 'video') {
-    loadHtmlMedia(
-      segment.url,
-      autoplay,
-      getSegmentMediaType(segment, source === 'audio' ? 'audio' : 'video')
-    );
+  if (source === 'url') {
+    loadHtmlMedia(segment.url, autoplay, getSegmentMediaType(segment));
     showMobilePlayer();
     return;
   }
@@ -201,28 +195,20 @@ function loadSegment(segment, autoplay) {
     `<span class="error">סוג מקור לא נתמך: ${source}</span>`;
 }
 
-function getSegmentMediaType(segment, fallbackType) {
-  const explicitType = (segment.type || segment.mediaType || '').toLowerCase();
+function getSegmentMediaType(segment) {
+  const explicitType = String(segment.type || segment.mediaType || '').toLowerCase();
 
   if (explicitType === 'audio' || explicitType === 'video') {
     return explicitType;
   }
 
-  return detectMediaType(segment.url || '', fallbackType);
-}
+  const url = String(segment.url || segment.fileName || '').toLowerCase().split('?')[0];
 
-function detectMediaType(url, fallbackType) {
-  const cleanUrl = String(url).split('?')[0].split('#')[0].toLowerCase();
-
-  if (/\.(mp3|wav|m4a|aac|ogg|oga|opus|flac)$/.test(cleanUrl)) {
+  if (url.match(/\.(mp3|wav|m4a|aac|ogg|oga|flac)$/)) {
     return 'audio';
   }
 
-  if (/\.(mp4|webm|mov|m4v|ogv)$/.test(cleanUrl)) {
-    return 'video';
-  }
-
-  return fallbackType || 'video';
+  return 'video';
 }
 
 function loadYouTubeSegment(segment, autoplay) {
@@ -246,6 +232,9 @@ function loadYouTubeSegment(segment, autoplay) {
         rel: 0,
         modestbranding: 1,
         autoplay: autoplay ? 1 : 0
+      },
+      events: {
+        onStateChange: onYouTubePlayerStateChange
       }
     });
   } else {
@@ -259,27 +248,21 @@ function loadYouTubeSegment(segment, autoplay) {
   showMobilePlayer();
 }
 
-function loadHtmlVideo(videoUrl, autoplay) {
-  loadHtmlMedia(videoUrl, autoplay, 'video');
-}
-
 function loadHtmlMedia(mediaUrl, autoplay, mediaType) {
   const wrapper = document.getElementById('videoWrapper');
 
   stopCurrentVideo();
   wrapper.innerHTML = '';
-  wrapper.classList.remove('audio-mode');
 
-  const safeMediaType = mediaType === 'audio' ? 'audio' : 'video';
-  const media = document.createElement(safeMediaType);
+  wrapper.classList.toggle('audio-wrapper', mediaType === 'audio');
 
-  media.id = safeMediaType === 'audio' ? 'htmlAudio' : 'htmlVideo';
+  const media = document.createElement(mediaType === 'audio' ? 'audio' : 'video');
+  media.id = 'htmlVideo';
   media.controls = true;
   media.src = mediaUrl;
 
-  if (safeMediaType === 'audio') {
-    wrapper.classList.add('audio-mode');
-    media.preload = 'metadata';
+  if (mediaType === 'audio') {
+    media.className = 'audio-player';
   }
 
   if (autoplay) {
@@ -288,19 +271,22 @@ function loadHtmlMedia(mediaUrl, autoplay, mediaType) {
 
   wrapper.appendChild(media);
   currentMode = 'html';
-  currentHtmlMediaType = safeMediaType;
   media.addEventListener('timeupdate', updateSkipButtons);
   media.addEventListener('loadedmetadata', updateSkipButtons);
+  media.addEventListener('ended', handleSegmentEnded);
+}
+
+function loadHtmlVideo(videoUrl, autoplay) {
+  loadHtmlMedia(videoUrl, autoplay, 'video');
 }
 
 function ensureYouTubeContainer() {
   const wrapper = document.getElementById('videoWrapper');
 
   if (currentMode !== 'youtube') {
-    wrapper.classList.remove('audio-mode');
+    wrapper.classList.remove('audio-wrapper');
     wrapper.innerHTML = '<div id="player"></div>';
     player = null;
-    currentHtmlMediaType = null;
   }
 }
 
@@ -308,12 +294,11 @@ function clearPlayer() {
   stopCurrentVideo();
 
   const wrapper = document.getElementById('videoWrapper');
-  wrapper.classList.remove('audio-mode');
+  wrapper.classList.remove('audio-wrapper');
   wrapper.innerHTML = '<div id="player"></div>';
 
   player = null;
   currentMode = null;
-  currentHtmlMediaType = null;
 }
 
 function stopCurrentVideo() {
@@ -322,17 +307,12 @@ function stopCurrentVideo() {
   }
 
   if (currentMode === 'html') {
-    const media = getHtmlMediaElement();
-    if (media) {
-      media.pause();
-      media.currentTime = 0;
+    const video = document.getElementById('htmlVideo');
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
     }
   }
-}
-
-function getHtmlMediaElement() {
-  return document.getElementById('htmlVideo') ||
-    document.getElementById('htmlAudio');
 }
 
 function getGoogleDriveDirectUrl(fileId) {
@@ -417,6 +397,92 @@ function setupOpenFullButton() {
     };
   }
 }
+
+function setupPlaybackOptions() {
+  const playAll = document.getElementById('playAllCheckbox');
+  const repeatOne = document.getElementById('repeatSegmentCheckbox');
+
+  if (playAll) {
+    playAll.checked = false;
+  }
+
+  if (repeatOne) {
+    repeatOne.checked = false;
+  }
+}
+
+function isPlayAllEnabled() {
+  const checkbox = document.getElementById('playAllCheckbox');
+  return !!(checkbox && checkbox.checked);
+}
+
+function isRepeatSegmentEnabled() {
+  const checkbox = document.getElementById('repeatSegmentCheckbox');
+  return !!(checkbox && checkbox.checked);
+}
+
+function getCurrentGroupSegments() {
+  if (!libraryData || !currentGroup) {
+    return [];
+  }
+
+  return libraryData.segments[currentGroup] || [];
+}
+
+function getCurrentSegmentIndex() {
+  const segments = getCurrentGroupSegments();
+  return segments.indexOf(currentSegment);
+}
+
+function handleSegmentEnded() {
+  if (advancingAfterEnded) {
+    return;
+  }
+
+  advancingAfterEnded = true;
+
+  try {
+    if (isPlayAllEnabled()) {
+      playNextSegmentInGroup(isRepeatSegmentEnabled());
+      return;
+    }
+
+    if (isRepeatSegmentEnabled() && currentSegment) {
+      loadSegment(currentSegment, true);
+    }
+  } finally {
+    setTimeout(() => {
+      advancingAfterEnded = false;
+    }, 250);
+  }
+}
+
+function playNextSegmentInGroup(loopToFirst) {
+  const segments = getCurrentGroupSegments();
+  const currentIndex = getCurrentSegmentIndex();
+
+  if (!segments.length || currentIndex < 0) {
+    return;
+  }
+
+  const nextIndex = currentIndex + 1;
+
+  if (nextIndex < segments.length) {
+    loadSegment(segments[nextIndex], true);
+    return;
+  }
+
+  if (loopToFirst) {
+    loadSegment(segments[0], true);
+  }
+}
+
+function onYouTubePlayerStateChange(event) {
+  if (window.YT && event.data === YT.PlayerState.ENDED) {
+    handleSegmentEnded();
+  }
+}
+
 function getCurrentGroupLabel() {
   const allGroups = [
     ...(libraryData.groups || []),
@@ -498,9 +564,9 @@ function getCurrentVideoTime() {
   }
 
   if (currentMode === 'html') {
-    const media = getHtmlMediaElement();
-    if (media) {
-      return media.currentTime;
+    const video = document.getElementById('htmlVideo');
+    if (video) {
+      return video.currentTime;
     }
   }
 
@@ -515,9 +581,9 @@ function getVideoDuration() {
   }
 
   if (currentMode === 'html') {
-    const media = getHtmlMediaElement();
-    if (media && !isNaN(media.duration)) {
-      return media.duration;
+    const video = document.getElementById('htmlVideo');
+    if (video && !isNaN(video.duration)) {
+      return video.duration;
     }
   }
 
@@ -542,10 +608,10 @@ function skipVideo(seconds) {
   }
 
   if (currentMode === 'html') {
-    const media = getHtmlMediaElement();
+    const video = document.getElementById('htmlVideo');
 
-    if (media) {
-      media.currentTime = target;
+    if (video) {
+      video.currentTime = target;
     }
   }
 
@@ -558,10 +624,10 @@ function jumpToStart() {
   }
 
   if (currentMode === 'html') {
-    const media = getHtmlMediaElement();
+    const video = document.getElementById('htmlVideo');
 
-    if (media) {
-      media.currentTime = 0;
+    if (video) {
+      video.currentTime = 0;
     }
   }
 
@@ -580,10 +646,10 @@ function jumpToEnd() {
   }
 
   if (currentMode === 'html') {
-    const media = getHtmlMediaElement();
+    const video = document.getElementById('htmlVideo');
 
-    if (media) {
-      media.currentTime = duration;
+    if (video) {
+      video.currentTime = duration;
     }
   }
 
@@ -696,10 +762,11 @@ function jumpToExactTime() {
   }
 
   if (currentMode === 'html') {
-    const media = getHtmlMediaElement();
+    const video =
+      document.getElementById('htmlVideo');
 
-    if (media) {
-      media.currentTime = target;
+    if (video) {
+      video.currentTime = target;
     }
   }
 
