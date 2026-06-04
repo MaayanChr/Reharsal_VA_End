@@ -1,0 +1,91 @@
+{
+  "libraryTitle": "Debussy - Dieu! qu'il la fait",
+  "defaultGroup": "all",
+  "groups": [
+    {
+      "id": "soprano",
+      "label": "סופרן"
+    },
+    {
+      "id": "alto",
+      "label": "אלט"
+    },
+    {
+      "id": "tenor",
+      "label": "טנור"
+    },
+    {
+      "id": "bass",
+      "label": "בס"
+    },
+    {
+      "id": "all",
+      "label": "כולם"
+    }
+  ],
+  "groups2": [
+    {
+      "id": "soprano2",
+      "label": "סופרן 2"
+    },
+    {
+      "id": "alto2",
+      "label": "אלט 2"
+    },
+    {
+      "id": "tenor2",
+      "label": "טנור 2"
+    },
+    {
+      "id": "bass2",
+      "label": "בס 2"
+    }
+  ],
+  "segments": {
+    "soprano": [],
+    "alto": [],
+    "tenor": [],
+    "bass": [],
+    "all": [
+      {
+        "title": "סופרן",
+        "source": "gdrive",
+        "ltr": false,
+        "type": "audio",
+        "fileId": "1S1_A0ekpgpFKrkTcC7IdvfQSaluKiZQ9"
+      },
+      {
+        "title": "אלט",
+        "source": "gdrive",
+        "ltr": false,
+        "type": "audio",
+        "fileId": "1yJhAeol9BmKRN286FZmjCZCer7f9AU7I"
+      },
+      {
+        "title": "טנור",
+        "source": "gdrive",
+        "ltr": false,
+        "type": "audio",
+        "fileId": "1bFVkSZLWtFUtPqjnVkWRJyHLVeeMbdUc"
+      },
+      {
+        "title": "בס",
+        "source": "gdrive",
+        "ltr": false,
+        "type": "audio",
+        "fileId": "1LdBKm4g7NYJWo9VwBSVpbN8uMsubLcUM"
+      },
+      {
+        "title": "ביצוע נבחר",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "03OjclbPEno",
+        "start": 0
+      }
+    ],
+    "soprano2": [],
+    "alto2": [],
+    "tenor2": [],
+    "bass2": []
+  }
+}
