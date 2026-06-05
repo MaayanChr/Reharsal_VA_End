@@ -512,7 +512,7 @@ button:hover:not(:disabled) {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-top: 8px;
-  scroll-padding-top: 8px;
+  padding-top: 12px;
+  scroll-padding-top: 12px;
 }
 }
