@@ -407,6 +407,14 @@ function initMobileMode() {
   document.body.classList.remove('mobile-player-mode');
 
   if (isMobileView()) {
+    document.body.classList.add('mobile-player-mode');
+  }
+}
+
+  document.body.classList.remove('mobile-menu-mode');
+  document.body.classList.remove('mobile-player-mode');
+
+  if (isMobileView()) {
     document.body.classList.add('mobile-menu-mode');
   }
 }
