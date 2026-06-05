@@ -468,6 +468,19 @@ button:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   max-height: 100vh;
+  overflow: hidden;
+}
+
+#segmentsTitle {
+  margin: 10px 0 8px 0;
+  flex-shrink: 0;
+}
+
+#segmentButtons {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 4px;
 }
 
 .groups-title-row,

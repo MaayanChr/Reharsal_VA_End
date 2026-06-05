@@ -117,18 +117,21 @@ function hasGroupContent(groupId) {
 }
 
 function renderSegmentButtons() {
+  const title = document.getElementById('segmentsTitle');
   const container = document.getElementById('segmentButtons');
   container.innerHTML = '';
 
   if (!currentGroup) {
-    container.textContent = 'בחר קול';
+    title.textContent = 'בחר קול';
     return;
   }
+
+  title.textContent = 'קטעים';
 
   const segments = libraryData.segments[currentGroup] || [];
 
   if (segments.length === 0) {
-    container.textContent = 'אין קטעים בקבוצה זו';
+    title.textContent = 'אין קטעים בקבוצה זו';
     return;
   }
 
