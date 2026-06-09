@@ -1,0 +1,98 @@
+{
+  "libraryTitle": "Mozart - Vesperae Solennes",
+  "defaultGroup": "all",
+  "groups": [
+    {
+      "id": "soprano",
+      "label": "סופרן"
+    },
+    {
+      "id": "alto",
+      "label": "אלט"
+    },
+    {
+      "id": "tenor",
+      "label": "טנור"
+    },
+    {
+      "id": "bass",
+      "label": "בס"
+    },
+    {
+      "id": "all",
+      "label": "כולם"
+    }
+  ],
+  "groups2": [
+    {
+      "id": "soprano2",
+      "label": "סופרן 2"
+    },
+    {
+      "id": "alto2",
+      "label": "אלט 2"
+    },
+    {
+      "id": "tenor2",
+      "label": "טנור 2"
+    },
+    {
+      "id": "bass2",
+      "label": "בס 2"
+    }
+  ],
+  "segments": {
+    "soprano": [],
+    "alto": [],
+    "tenor": [],
+    "bass": [],
+    "all": [
+      {
+        "title": "1. Dixit Dominus",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "5uHII9B8F0M",
+        "start": 0
+      },
+      {
+        "title": "2. Confitebor",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "5uHII9B8F0M",
+        "start": 249
+      },
+      {
+        "title": "3. Beatus vir",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "5uHII9B8F0M",
+        "start": 531
+      },
+      {
+        "title": "4. Laudate pueri",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "5uHII9B8F0M",
+        "start": 816
+      },
+      {
+        "title": "5. Laudate Dominum",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "5uHII9B8F0M",
+        "start": 1015
+      },
+      {
+        "title": "6. Magnificat",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "5uHII9B8F0M",
+        "start": 1277
+      }
+    ],
+    "soprano2": [],
+    "alto2": [],
+    "tenor2": [],
+    "bass2": []
+  }
+}
