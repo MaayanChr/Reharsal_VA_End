@@ -1,6 +1,6 @@
 {
   "libraryTitle": "Mozart - Vesperae Solennes",
-  "defaultGroup": "soprano",
+  "defaultGroup": "all",
   "groups": [
     {
       "id": "soprano",
@@ -44,7 +44,7 @@
   "segments": {
     "soprano": [
       {
-        "title": "1. Dixit Dominus",
+        "title": "1.0 Dixit Dominus",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -58,14 +58,14 @@
         "start": 172
       },
       {
-        "title": "2. Confitebor",
+        "title": "2.0 Confitebor",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
         "start": 248
       },
       {
-        "title": "2.1 Confitebor bar 37",
+        "title": "2.1 Confitebor bar 35",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -79,7 +79,7 @@
         "start": 422
       },
       {
-        "title": "3. Beatus vir",
+        "title": "3.0 Beatus vir",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -121,21 +121,21 @@
         "start": 736
       },
       {
-        "title": "4. Laudate pueri",
+        "title": "4.0 Laudate pueri",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
         "start": 816
       },
       {
-        "title": "5. Laudate Dominum",
+        "title": "5.0 Laudate Dominum",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
         "start": 1015
       },
       {
-        "title": "6. Magnificat",
+        "title": "6.0 Magnificat",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -182,7 +182,7 @@
     "bass": [],
     "all": [
       {
-        "title": "1. Dixit Dominus",
+        "title": "1.0 Dixit Dominus",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -196,7 +196,7 @@
         "start": 191
       },
       {
-        "title": "2. Confitebor",
+        "title": "2.0 Confitebor",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -224,7 +224,7 @@
         "start": 450
       },
       {
-        "title": "3. Beatus vir",
+        "title": "3.0 Beatus vir",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -266,7 +266,7 @@
         "start": 754
       },
       {
-        "title": "4. Laudate pueri",
+        "title": "4.0 Laudate pueri",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -280,7 +280,7 @@
         "start": 912
       },
       {
-        "title": "5. Laudate Dominum",
+        "title": "5.0 Laudate Dominum",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
@@ -294,7 +294,7 @@
         "start": 1152
       },
       {
-        "title": "6. Magnificat",
+        "title": "6.0 Magnificat",
         "source": "youtube",
         "ltr": true,
         "videoId": "5uHII9B8F0M",
