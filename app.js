@@ -12,6 +12,7 @@ let audioWaveformData = null;
 let audioVisualizerMedia = null;
 let segmentEndMonitorTimer = null;
 let manualSegmentEndSeconds = null;
+let manualSegmentStartSeconds = null;
 let countdownTimer = null;
 let countdownActive = false;
 
@@ -216,6 +217,7 @@ function applyTextDirection(element, segment) {
 }
 
 function loadSegment(segment, autoplay) {
+  manualSegmentStartSeconds = null;
   currentSegment = segment;
   renderSegmentButtons();
   const currentTitle = document.getElementById('currentTitle');
@@ -1046,6 +1048,7 @@ function pauseCurrentMedia() {
   }
 }
 
+
 function playCurrentMedia() {
   if (currentMode === 'youtube' && player && typeof player.playVideo === 'function') {
     player.playVideo();
@@ -1053,6 +1056,7 @@ function playCurrentMedia() {
 
   if (currentMode === 'html') {
     const video = document.getElementById('htmlVideo');
+
     if (video) {
       video.play();
     }
@@ -1103,14 +1107,22 @@ function finishCurrentSegment() {
 
 function repeatCurrentSegmentWithCountdown() {
   const segmentToRepeat = currentSegment;
-  const start = getSegmentStartSeconds(segmentToRepeat);
+  const start = manualSegmentStartSeconds !== null
+    ? manualSegmentStartSeconds
+    : getSegmentStartSeconds(segmentToRepeat);
 
   countdownActive = true;
   pauseCurrentMedia();
   seekToTime(start);
   showCountdown(3, () => {
+    seekToTime(start);
     countdownActive = false;
-    loadSegment(segmentToRepeat, true);
+
+    if (manualSegmentStartSeconds !== null) {
+      playCurrentMedia();
+    } else {
+      loadSegment(segmentToRepeat, true);
+    }
   });
 }
 
@@ -1226,6 +1238,9 @@ function jumpToExactTime() {
   const start = getSegmentStartSeconds(currentSegment);
   const end = getActiveSegmentEndSeconds() || duration;
   const target = Math.max(start, Math.min(end, seconds));
+
+  manualSegmentStartSeconds = target;
+  input.value = formatTime(target);
 
   countdownActive = true;
   pauseCurrentMedia();
