@@ -961,9 +961,9 @@ function resetSegmentEndInput() {
 function refreshSegmentEndInput() {
   const input = document.getElementById('segmentEndTimeInput');
 
-  if (!input || manualSegmentEndSeconds !== null) {
-    return;
-  }
+	if (!input || manualSegmentEndSeconds !== null || document.activeElement === input) {
+	  return;
+	}
 
   const end = getDefaultSegmentEndSeconds();
 
@@ -1143,12 +1143,8 @@ function startSegmentEndMonitor() {
 
     const end = getActiveSegmentEndSeconds();
 
-	if (end === null) {
-	  const input = document.getElementById('segmentEndTimeInput');
-	  if (input) {
-		input.value = '';
-	  }
-	  return;
+    if (end === null) {
+		return;
 	}
 
     const current = getCurrentVideoTime();
