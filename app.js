@@ -226,6 +226,11 @@ function loadSegment(segment, autoplay) {
     : segment.title;
 
   applyTextDirection(currentTitle, segment);
+  const jumpInput = document.getElementById('jumpToTimeInput');
+  if (jumpInput) {
+    jumpInput.value = formatTime(getSegmentStartSeconds(segment));
+  }
+
   resetSegmentEndInput();
 
   const source = segment.source || 'youtube';
@@ -831,9 +836,22 @@ function getSegmentDataEndSeconds(segment) {
   }
 
   const value = segment.end ?? segment.endTime ?? segment.stop ?? segment.stopAt;
+
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
   const seconds = Number(value);
 
-  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+  if (!Number.isFinite(seconds)) {
+    return null;
+  }
+
+  if (seconds === -1) {
+    return -1;
+  }
+
+  return seconds > 0 ? seconds : null;
 }
 
 function sameMediaSegment(a, b) {
@@ -878,7 +896,7 @@ function getNextSegmentStartMinusGap() {
   }
 
   const nextStart = getSegmentStartSeconds(nextSegment);
-  const candidate = nextStart - 2;
+  const candidate = nextStart - 1;
 
   return candidate > getSegmentStartSeconds(currentSegment) ? candidate : null;
 }
@@ -895,7 +913,11 @@ function getDefaultSegmentEndSeconds() {
   const dataEnd = getSegmentDataEndSeconds(currentSegment);
   const nextGapEnd = getNextSegmentStartMinusGap();
 
-  if (dataEnd !== null && dataEnd > start) {
+  if (dataEnd === -1) {
+    if (duration && duration > start) {
+      candidates.push(duration);
+    }
+  } else if (dataEnd !== null && dataEnd > start) {
     candidates.push(dataEnd);
   }
 
