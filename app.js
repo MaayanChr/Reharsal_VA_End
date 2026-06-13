@@ -968,7 +968,7 @@ function refreshSegmentEndInput() {
   const end = getDefaultSegmentEndSeconds();
 
 	if (getSegmentDataEndSeconds(currentSegment) === -1) {
-	  input.value = 'סוף';
+	  input.value = '';
 	} else if (end !== null) {
 	  input.value = formatTime(end);
 	} else {
