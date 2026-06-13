@@ -835,9 +835,18 @@ function getSegmentDataEndSeconds(segment) {
     return null;
   }
 
-  const value = segment.end ?? segment.endTime ?? segment.stop ?? segment.stopAt;
+  const value =
+    segment.end ??
+    segment.endTime ??
+    segment.stop ??
+    segment.stopAt;
 
-  if (value === undefined || value === null || value === '') {
+  // לא הוגדר זמן סיום
+  if (
+    value === undefined ||
+    value === null ||
+    value === ''
+  ) {
     return null;
   }
 
@@ -847,13 +856,13 @@ function getSegmentDataEndSeconds(segment) {
     return null;
   }
 
+  // -1 = אין זמן סיום
   if (seconds === -1) {
     return -1;
   }
 
   return seconds > 0 ? seconds : null;
 }
-
 function sameMediaSegment(a, b) {
   if (!a || !b) {
     return false;
@@ -902,6 +911,33 @@ function getNextSegmentStartMinusGap() {
 }
 
 function getDefaultSegmentEndSeconds() {
+  if (!currentSegment) {
+    return null;
+  }
+
+  const start = getSegmentStartSeconds(currentSegment);
+  const dataEnd = getSegmentDataEndSeconds(currentSegment);
+
+  // end: -1 = לא קובעים זמן סיום. ממשיכים עד סוף המקור.
+  if (dataEnd === -1) {
+    return null;
+  }
+
+  // end רגיל בקובץ הוא הקובע
+  if (dataEnd !== null && dataEnd > start) {
+    return dataEnd;
+  }
+
+  // אין end בכלל: שנייה לפני תחילת הקטע הבא
+  const nextGapEnd = getNextSegmentStartMinusGap();
+
+  if (nextGapEnd !== null && nextGapEnd > start) {
+    return nextGapEnd;
+  }
+
+  // אין קטע הבא: לא קובעים זמן סיום
+  return null;
+}
   if (!currentSegment) {
     return null;
   }
