@@ -36,6 +36,7 @@
              id="videoWrapper">
 
             <div id="player"></div>
+            <div id="countdownOverlay" class="countdown-overlay" aria-hidden="true"></div>
 
         </div>
         <div class="player-toolbar">
@@ -54,6 +55,16 @@
                 <button id="jumpToTimeBtn">
                     דלג
                 </button>
+
+                <label class="end-time-label" for="segmentEndTimeInput">
+                    עד
+                </label>
+
+                <input
+                    type="text"
+                    id="segmentEndTimeInput"
+                    placeholder="1:30"
+                    title="זמן סיום הקטע">
             </div>
 
             <div id="skipButtons"
