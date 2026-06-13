@@ -961,6 +961,29 @@ function resetSegmentEndInput() {
 function refreshSegmentEndInput() {
   const input = document.getElementById('segmentEndTimeInput');
 
+  if (!input) {
+    return;
+  }
+
+  if (manualSegmentEndSeconds !== null) {
+    input.value = formatTime(manualSegmentEndSeconds);
+    return;
+  }
+
+  if (document.activeElement === input) {
+    return;
+  }
+
+  const end = getDefaultSegmentEndSeconds();
+
+  if (end !== null) {
+    input.value = formatTime(end);
+  } else {
+    input.value = '';
+  }
+}
+  const input = document.getElementById('segmentEndTimeInput');
+
 	if (!input || manualSegmentEndSeconds !== null || document.activeElement === input) {
 	  return;
 	}
