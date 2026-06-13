@@ -993,14 +993,20 @@ function validateManualSegmentEnd() {
 
   const seconds = parseTimeString(text);
   const start = getSegmentStartSeconds(currentSegment);
-  const maxEnd = getDefaultSegmentEndSeconds();
+  const duration = getVideoDuration();
 
-  if (seconds === null || seconds <= start || (maxEnd !== null && seconds > maxEnd)) {
+  if (seconds === null || seconds <= start) {
     input.classList.add('invalid');
     manualSegmentEndSeconds = null;
-    refreshSegmentEndInput();
-    alert(`זמן הסיום חייב להיות גדול מ-${formatTime(start)} ולא גדול מ-${formatTime(maxEnd || start)}.`);
+    alert(`זמן הסיום חייב להיות גדול מ-${formatTime(start)}.`);
     return false;
+  }
+
+  if (duration && seconds > duration) {
+    manualSegmentEndSeconds = duration;
+    input.value = formatTime(duration);
+    input.classList.remove('invalid');
+    return true;
   }
 
   manualSegmentEndSeconds = seconds;
@@ -1008,7 +1014,6 @@ function validateManualSegmentEnd() {
   input.classList.remove('invalid');
   return true;
 }
-
 function seekToTime(seconds) {
   if (currentMode === 'youtube' && player && typeof player.seekTo === 'function') {
     player.seekTo(seconds, true);
