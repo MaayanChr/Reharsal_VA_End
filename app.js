@@ -147,10 +147,41 @@ function renderSegmentButtons() {
     container.classList.add('segment-buttons-ltr');
   }
 
-  segments.forEach(segment => {
+  segments.forEach((segment, index) => {
     const btn = document.createElement('button');
     btn.className = 'segment-button';
-    btn.textContent = segment.title;
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'segment-button-title';
+    titleSpan.textContent = segment.title;
+
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'segment-button-time';
+    timeSpan.textContent = getSegmentButtonTimeRange(segment, index, segments);
+
+    btn.appendChild(titleSpan);
+    btn.appendChild(timeSpan);
+
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'space-between';
+    btn.style.gap = '8px';
+    btn.style.direction = 'ltr';
+
+    titleSpan.style.flex = '1';
+    titleSpan.style.minWidth = '0';
+    titleSpan.style.overflow = 'hidden';
+    titleSpan.style.textOverflow = 'ellipsis';
+    titleSpan.style.whiteSpace = 'nowrap';
+    titleSpan.style.textAlign = 'left';
+    titleSpan.style.direction = segment.ltr !== false ? 'ltr' : 'rtl';
+
+    timeSpan.style.flex = '0 0 auto';
+    timeSpan.style.fontSize = '0.78em';
+    timeSpan.style.fontWeight = 'normal';
+    timeSpan.style.opacity = '0.75';
+    timeSpan.style.direction = 'ltr';
+    timeSpan.style.textAlign = 'right';
 
     applySegmentNumberColor(btn, segment);
 
@@ -158,14 +189,47 @@ function renderSegmentButtons() {
       btn.classList.add('active');
     }
 
-    applyTextDirection(btn, segment);
-
     btn.onclick = function () {
       loadSegment(segment, true);
     };
 
     container.appendChild(btn);
   });
+}
+
+function getSegmentButtonTimeRange(segment, index, segments) {
+  const start = getSegmentStartSeconds(segment);
+  const end = getSegmentButtonEndText(segment, index, segments);
+
+  return `(${formatTime(start)}-${end})`;
+}
+
+function getSegmentButtonEndText(segment, index, segments) {
+  const dataEnd = getSegmentDataEndSeconds(segment);
+  const start = getSegmentStartSeconds(segment);
+
+  if (dataEnd === -1) {
+    return 'סוף';
+  }
+
+  if (dataEnd !== null && dataEnd > start) {
+    return formatTime(dataEnd);
+  }
+
+  if (index >= 0 && index + 1 < segments.length) {
+    const nextSegment = segments[index + 1];
+
+    if (sameMediaSegment(segment, nextSegment)) {
+      const nextStart = getSegmentStartSeconds(nextSegment);
+      const candidate = nextStart - 1;
+
+      if (candidate > start) {
+        return formatTime(candidate);
+      }
+    }
+  }
+
+  return 'סוף';
 }
 
 function applySegmentNumberColor(button, segment) {
