@@ -841,7 +841,6 @@ function getSegmentDataEndSeconds(segment) {
     segment.stop ??
     segment.stopAt;
 
-  // לא הוגדר זמן סיום
   if (
     value === undefined ||
     value === null ||
@@ -856,13 +855,13 @@ function getSegmentDataEndSeconds(segment) {
     return null;
   }
 
-  // -1 = אין זמן סיום
   if (seconds === -1) {
     return -1;
   }
 
   return seconds > 0 ? seconds : null;
 }
+
 function sameMediaSegment(a, b) {
   if (!a || !b) {
     return false;
@@ -918,53 +917,25 @@ function getDefaultSegmentEndSeconds() {
   const start = getSegmentStartSeconds(currentSegment);
   const dataEnd = getSegmentDataEndSeconds(currentSegment);
 
-  // end: -1 = לא קובעים זמן סיום. ממשיכים עד סוף המקור.
+  // end: -1 = אין זמן סיום. לא עוצרים בתחילת הקטע הבא.
   if (dataEnd === -1) {
     return null;
   }
 
-  // end רגיל בקובץ הוא הקובע
+  // end רגיל בקובץ הוא הקובע.
   if (dataEnd !== null && dataEnd > start) {
     return dataEnd;
   }
 
-  // אין end בכלל: שנייה לפני תחילת הקטע הבא
+  // אין end בכלל: שנייה לפני תחילת הקטע הבא באותו מקור.
   const nextGapEnd = getNextSegmentStartMinusGap();
 
   if (nextGapEnd !== null && nextGapEnd > start) {
     return nextGapEnd;
   }
 
-  // אין קטע הבא: לא קובעים זמן סיום
+  // אין קטע הבא באותו מקור: אין זמן סיום.
   return null;
-}
-  if (!currentSegment) {
-    return null;
-  }
-
-  const start = getSegmentStartSeconds(currentSegment);
-  const duration = getVideoDuration();
-  const dataEnd = getSegmentDataEndSeconds(currentSegment);
-
-  // end: -1 means: ignore the next segment and continue to the end of the source.
-  if (dataEnd === -1) {
-    return duration && duration > start ? duration : null;
-  }
-
-  // Explicit end in the data file is the controlling end time.
-  if (dataEnd !== null && dataEnd > start) {
-    return dataEnd;
-  }
-
-  // No end in data file: stop one second before the next segment on the same source,
-  // or at the source end if there is no next segment on the same source.
-  const nextGapEnd = getNextSegmentStartMinusGap();
-
-  if (nextGapEnd !== null && nextGapEnd > start) {
-    return nextGapEnd;
-  }
-
-  return duration && duration > start ? duration : null;
 }
 
 function getActiveSegmentEndSeconds() {
