@@ -1,0 +1,117 @@
+{
+  "libraryTitle": "Haydn: Salve Regina - Tuti",
+  "defaultGroup": "all",
+  "groups": [
+    {
+      "id": "soprano",
+      "label": "סופרן"
+    },
+    {
+      "id": "alto",
+      "label": "אלט"
+    },
+    {
+      "id": "tenor",
+      "label": "טנור"
+    },
+    {
+      "id": "bass",
+      "label": "בס"
+    },
+    {
+      "id": "all",
+      "label": "כולם"
+    }
+  ],
+  "groups2": [
+    {
+      "id": "soprano2",
+      "label": "סופרן 2"
+    },
+    {
+      "id": "alto2",
+      "label": "אלט 2"
+    },
+    {
+      "id": "tenor2",
+      "label": "טנור 2"
+    },
+    {
+      "id": "bass2",
+      "label": "בס 2"
+    }
+  ],
+  "segments": {
+    "soprano": [],
+    "alto": [],
+    "tenor": [],
+    "bass": [],
+    "all": [
+      {
+        "title": "1.0 Adagio",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 0
+      },
+      {
+        "title": "2.1 Alegro - p. 12",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 498
+      },
+      {
+        "title": "2.2 Alegro - p. 13 chor",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 537,
+        "end": 638
+      },
+      {
+        "title": "2.3 Alegro - p. 16 chor",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 639,
+        "end": 749
+      },
+      {
+        "title": "3.0 Largo",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 750
+      },
+      {
+        "title": "3.1 Largo - p. 19 chor",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 795,
+        "end": 921
+      },
+      {
+        "title": "3.2 Largo - p. 23 chor",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 922,
+        "end": 1038
+      },
+      {
+        "title": "3.3 Largo - p. 27 chor",
+        "source": "youtube",
+        "ltr": true,
+        "videoId": "pXzVpyjxW2M",
+        "start": 1039,
+        "end": 1087
+      }
+    ],
+    "soprano2": [],
+    "alto2": [],
+    "tenor2": [],
+    "bass2": []
+  }
+}
