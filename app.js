@@ -10,11 +10,6 @@ let advancingAfterEnded = false;
 let audioVisualizerAnimationId = null;
 let audioWaveformData = null;
 let audioVisualizerMedia = null;
-let segmentEndMonitorTimer = null;
-let manualSegmentEndSeconds = null;
-let countdownTimer = null;
-let countdownActive = false;
-
 
 
 function getDataFileName() {
@@ -181,20 +176,20 @@ function applySegmentNumberColor(button, segment) {
     return;
   }
 
-const colors = [
-  '#dbeafe', // כחול
-  '#dcfce7', // ירוק
-  '#fef3c7', // צהוב
-  '#fde2e8', // ורוד
-  '#e9d5ff', // סגול
-  '#fed7aa', // כתום
-  '#bfdbfe', // כחול חזק יותר
-  '#bbf7d0', // ירוק חזק יותר
-  '#fde68a', // צהוב חזק יותר
-  '#fbcfe8', // ורוד חזק יותר
-  '#ddd6fe', // סגול חזק יותר
-  '#fdba74'  // כתום חזק יותר
-];
+  const colors = [
+    '#eef6ff',
+    '#f0fdf4',
+    '#fff7ed',
+    '#fdf2f8',
+    '#f5f3ff',
+    '#ecfeff',
+    '#fefce8',
+    '#f1f5f9',
+    '#f0f9ff',
+    '#f7fee7',
+    '#fff1f2',
+    '#faf5ff'
+  ];
 
   button.classList.add('segment-numbered');
   button.style.setProperty(
@@ -226,7 +221,6 @@ function loadSegment(segment, autoplay) {
     : segment.title;
 
   applyTextDirection(currentTitle, segment);
-  resetSegmentEndInput();
 
   const source = segment.source || 'youtube';
 
@@ -300,7 +294,6 @@ function loadYouTubeSegment(segment, autoplay) {
         autoplay: autoplay ? 1 : 0
       },
       events: {
-        onReady: refreshSegmentEndInput,
         onStateChange: onYouTubePlayerStateChange
       }
     });
@@ -309,25 +302,10 @@ function loadYouTubeSegment(segment, autoplay) {
       videoId: videoId,
       startSeconds: startSeconds
     });
-    setTimeout(refreshSegmentEndInput, 500);
   }
 
   currentMode = 'youtube';
   showMobilePlayer();
-}
-
-function ensureCountdownOverlay() {
-  const wrapper = document.getElementById('videoWrapper');
-
-  if (!wrapper || document.getElementById('countdownOverlay')) {
-    return;
-  }
-
-  const overlay = document.createElement('div');
-  overlay.id = 'countdownOverlay';
-  overlay.className = 'countdown-overlay';
-  overlay.setAttribute('aria-hidden', 'true');
-  wrapper.appendChild(overlay);
 }
 
 function loadHtmlMedia(mediaUrl, autoplay, mediaType, startSeconds) {
@@ -356,7 +334,6 @@ function loadHtmlMedia(mediaUrl, autoplay, mediaType, startSeconds) {
       media.currentTime = startSeconds;
     }
 
-    refreshSegmentEndInput();
     updateSkipButtons();
   });
 
@@ -369,7 +346,6 @@ function loadHtmlMedia(mediaUrl, autoplay, mediaType, startSeconds) {
     addAudioVolumeControl(wrapper, media);
   }
 
-  ensureCountdownOverlay();
   currentMode = 'html';
 }
 
@@ -415,7 +391,6 @@ function ensureYouTubeContainer() {
   if (currentMode !== 'youtube') {
     wrapper.classList.remove('audio-wrapper');
     wrapper.innerHTML = '<div id="player"></div>';
-    ensureCountdownOverlay();
     player = null;
   }
 }
@@ -426,7 +401,6 @@ function clearPlayer() {
   const wrapper = document.getElementById('videoWrapper');
   wrapper.classList.remove('audio-wrapper');
   wrapper.innerHTML = '<div id="player"></div>';
-  ensureCountdownOverlay();
 
   player = null;
   currentMode = null;
@@ -541,20 +515,10 @@ function setupPlaybackOptions() {
 
   if (playAll) {
     playAll.checked = false;
-    playAll.onchange = function () {
-      if (playAll.checked && repeatOne) {
-        repeatOne.checked = false;
-      }
-    };
   }
 
   if (repeatOne) {
     repeatOne.checked = false;
-    repeatOne.onchange = function () {
-      if (repeatOne.checked && playAll) {
-        playAll.checked = false;
-      }
-    };
   }
 }
 
@@ -582,7 +546,26 @@ function getCurrentSegmentIndex() {
 }
 
 function handleSegmentEnded() {
-  finishCurrentSegment();
+  if (advancingAfterEnded) {
+    return;
+  }
+
+  advancingAfterEnded = true;
+
+  try {
+    if (isPlayAllEnabled()) {
+      playNextSegmentInGroup(isRepeatSegmentEnabled());
+      return;
+    }
+
+    if (isRepeatSegmentEnabled() && currentSegment) {
+      loadSegment(currentSegment, true);
+    }
+  } finally {
+    setTimeout(() => {
+      advancingAfterEnded = false;
+    }, 250);
+  }
 }
 
 function playNextSegmentInGroup(loopToFirst) {
@@ -590,22 +573,19 @@ function playNextSegmentInGroup(loopToFirst) {
   const currentIndex = getCurrentSegmentIndex();
 
   if (!segments.length || currentIndex < 0) {
-    return false;
+    return;
   }
 
   const nextIndex = currentIndex + 1;
 
   if (nextIndex < segments.length) {
     loadSegment(segments[nextIndex], true);
-    return true;
+    return;
   }
 
   if (loopToFirst) {
     loadSegment(segments[0], true);
-    return true;
   }
-
-  return false;
 }
 
 function onYouTubePlayerStateChange(event) {
@@ -731,27 +711,60 @@ function skipVideo(seconds) {
 
   let target = current + seconds;
 
-  const start = getSegmentStartSeconds(currentSegment);
-  const end = getActiveSegmentEndSeconds() || duration;
+  target = Math.max(0, target);
+  target = Math.min(duration, target);
 
-  target = Math.max(start, target);
-  target = Math.min(end, target);
+  if (currentMode === 'youtube') {
+    player.seekTo(target, true);
+  }
 
-  seekToTime(target);
+  if (currentMode === 'html') {
+    const video = document.getElementById('htmlVideo');
+
+    if (video) {
+      video.currentTime = target;
+    }
+  }
+
+  updateSkipButtons();
 }
 
 function jumpToStart() {
-  seekToTime(getSegmentStartSeconds(currentSegment));
+  if (currentMode === 'youtube') {
+    player.seekTo(0, true);
+  }
+
+  if (currentMode === 'html') {
+    const video = document.getElementById('htmlVideo');
+
+    if (video) {
+      video.currentTime = 0;
+    }
+  }
+
+  updateSkipButtons();
 }
 
 function jumpToEnd() {
-  const end = getActiveSegmentEndSeconds() || getVideoDuration();
+  const duration = getVideoDuration();
 
-  if (!end) {
+  if (!duration) {
     return;
   }
 
-  seekToTime(end);
+  if (currentMode === 'youtube') {
+    player.seekTo(duration, true);
+  }
+
+  if (currentMode === 'html') {
+    const video = document.getElementById('htmlVideo');
+
+    if (video) {
+      video.currentTime = duration;
+    }
+  }
+
+  updateSkipButtons();
 }
 
 function updateSkipButtons() {
@@ -775,23 +788,21 @@ function updateSkipButtons() {
     }
 
     const target = current + skip;
-    const start = getSegmentStartSeconds(currentSegment);
-    const end = getActiveSegmentEndSeconds() || duration;
 
     btn.disabled =
-      target < start ||
-      target > end;
+      target < 0 ||
+      target > duration;
   });
 
   const startBtn = container.querySelector('.skip-start');
   const endBtn = container.querySelector('.skip-end');
 
   if (startBtn) {
-    startBtn.disabled = !duration || current <= getSegmentStartSeconds(currentSegment);
+    startBtn.disabled = !duration || current <= 0;
   }
 
   if (endBtn) {
-    endBtn.disabled = !duration || current >= (getActiveSegmentEndSeconds() || duration);
+    endBtn.disabled = !duration || current >= duration;
   }
 }
 
@@ -801,322 +812,6 @@ function startSkipButtonsUpdater() {
   }
 
   skipButtonsTimer = setInterval(updateSkipButtons, 500);
-}
-
-
-function formatTime(seconds) {
-  if (!Number.isFinite(seconds)) {
-    return '';
-  }
-
-  seconds = Math.max(0, Math.floor(seconds));
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const sec = seconds % 60;
-
-  if (h > 0) {
-    return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-  }
-
-  return `${m}:${String(sec).padStart(2, '0')}`;
-}
-
-function getSegmentStartSeconds(segment) {
-  return Number(segment && segment.start) || 0;
-}
-
-function getSegmentDataEndSeconds(segment) {
-  if (!segment) {
-    return null;
-  }
-
-  const value = segment.end ?? segment.endTime ?? segment.stop ?? segment.stopAt;
-  const seconds = Number(value);
-
-  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
-}
-
-function sameMediaSegment(a, b) {
-  if (!a || !b) {
-    return false;
-  }
-
-  const aSource = a.source || 'youtube';
-  const bSource = b.source || 'youtube';
-
-  if (aSource !== bSource) {
-    return false;
-  }
-
-  if (aSource === 'youtube') {
-    return a.videoId && a.videoId === b.videoId;
-  }
-
-  if (aSource === 'gdrive') {
-    return a.fileId && a.fileId === b.fileId;
-  }
-
-  if (aSource === 'url') {
-    return a.url && a.url === b.url;
-  }
-
-  return false;
-}
-
-function getNextSegmentStartMinusGap() {
-  const segments = getCurrentGroupSegments();
-  const index = getCurrentSegmentIndex();
-
-  if (index < 0 || index + 1 >= segments.length) {
-    return null;
-  }
-
-  const nextSegment = segments[index + 1];
-
-  if (!sameMediaSegment(currentSegment, nextSegment)) {
-    return null;
-  }
-
-  const nextStart = getSegmentStartSeconds(nextSegment);
-  const candidate = nextStart - 2;
-
-  return candidate > getSegmentStartSeconds(currentSegment) ? candidate : null;
-}
-
-function getDefaultSegmentEndSeconds() {
-  if (!currentSegment) {
-    return null;
-  }
-
-  const start = getSegmentStartSeconds(currentSegment);
-  const duration = getVideoDuration();
-  const candidates = [];
-
-  const dataEnd = getSegmentDataEndSeconds(currentSegment);
-  const nextGapEnd = getNextSegmentStartMinusGap();
-
-  if (dataEnd !== null && dataEnd > start) {
-    candidates.push(dataEnd);
-  }
-
-  if (nextGapEnd !== null && nextGapEnd > start) {
-    candidates.push(nextGapEnd);
-  }
-
-  if (duration && duration > start) {
-    candidates.push(duration);
-  }
-
-  return candidates.length ? Math.min(...candidates) : null;
-}
-
-function getActiveSegmentEndSeconds() {
-  if (manualSegmentEndSeconds !== null) {
-    return manualSegmentEndSeconds;
-  }
-
-  return getDefaultSegmentEndSeconds();
-}
-
-function resetSegmentEndInput() {
-  manualSegmentEndSeconds = null;
-  const input = document.getElementById('segmentEndTimeInput');
-
-  if (input) {
-    input.value = '';
-    input.classList.remove('invalid');
-  }
-
-  setTimeout(refreshSegmentEndInput, 300);
-}
-
-function refreshSegmentEndInput() {
-  const input = document.getElementById('segmentEndTimeInput');
-
-  if (!input || manualSegmentEndSeconds !== null) {
-    return;
-  }
-
-  const end = getDefaultSegmentEndSeconds();
-
-  if (end !== null) {
-    input.value = formatTime(end);
-  }
-}
-
-function validateManualSegmentEnd() {
-  const input = document.getElementById('segmentEndTimeInput');
-
-  if (!input) {
-    return true;
-  }
-
-  const text = input.value.trim();
-
-  if (!text) {
-    manualSegmentEndSeconds = null;
-    refreshSegmentEndInput();
-    return true;
-  }
-
-  const seconds = parseTimeString(text);
-  const start = getSegmentStartSeconds(currentSegment);
-  const maxEnd = getDefaultSegmentEndSeconds();
-
-  if (seconds === null || seconds <= start || (maxEnd !== null && seconds > maxEnd)) {
-    input.classList.add('invalid');
-    manualSegmentEndSeconds = null;
-    refreshSegmentEndInput();
-    alert(`זמן הסיום חייב להיות גדול מ-${formatTime(start)} ולא גדול מ-${formatTime(maxEnd || start)}.`);
-    return false;
-  }
-
-  manualSegmentEndSeconds = seconds;
-  input.value = formatTime(seconds);
-  input.classList.remove('invalid');
-  return true;
-}
-
-function seekToTime(seconds) {
-  if (currentMode === 'youtube' && player && typeof player.seekTo === 'function') {
-    player.seekTo(seconds, true);
-  }
-
-  if (currentMode === 'html') {
-    const video = document.getElementById('htmlVideo');
-
-    if (video) {
-      video.currentTime = seconds;
-    }
-  }
-
-  updateSkipButtons();
-}
-
-function pauseCurrentMedia() {
-  if (currentMode === 'youtube' && player && typeof player.pauseVideo === 'function') {
-    player.pauseVideo();
-  }
-
-  if (currentMode === 'html') {
-    const video = document.getElementById('htmlVideo');
-
-    if (video) {
-      video.pause();
-    }
-  }
-}
-
-function finishCurrentSegment() {
-  if (advancingAfterEnded || countdownActive) {
-    return;
-  }
-
-  advancingAfterEnded = true;
-
-  try {
-    if (isPlayAllEnabled()) {
-      if (playNextSegmentInGroup(false)) {
-        return;
-      }
-
-      const end = getActiveSegmentEndSeconds();
-
-      if (end !== null) {
-        seekToTime(end);
-      }
-
-      pauseCurrentMedia();
-      return;
-    }
-
-    if (isRepeatSegmentEnabled() && currentSegment) {
-      repeatCurrentSegmentWithCountdown();
-      return;
-    }
-
-    const end = getActiveSegmentEndSeconds();
-
-    if (end !== null) {
-      seekToTime(end);
-    }
-
-    pauseCurrentMedia();
-  } finally {
-    setTimeout(() => {
-      advancingAfterEnded = false;
-    }, 350);
-  }
-}
-
-function repeatCurrentSegmentWithCountdown() {
-  const segmentToRepeat = currentSegment;
-  const start = getSegmentStartSeconds(segmentToRepeat);
-
-  countdownActive = true;
-  pauseCurrentMedia();
-  seekToTime(start);
-  showCountdown(3, () => {
-    countdownActive = false;
-    loadSegment(segmentToRepeat, true);
-  });
-}
-
-function showCountdown(fromNumber, callback) {
-  const overlay = document.getElementById('countdownOverlay');
-  let value = fromNumber;
-
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-  }
-
-  if (!overlay) {
-    setTimeout(callback, fromNumber * 1000);
-    return;
-  }
-
-  overlay.classList.add('show');
-  overlay.textContent = String(value);
-
-  countdownTimer = setInterval(() => {
-    value -= 1;
-    overlay.textContent = String(value);
-
-    if (value <= 0) {
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-      setTimeout(() => {
-        overlay.classList.remove('show');
-        overlay.textContent = '';
-        callback();
-      }, 250);
-    }
-  }, 1000);
-}
-
-function startSegmentEndMonitor() {
-  if (segmentEndMonitorTimer) {
-    clearInterval(segmentEndMonitorTimer);
-  }
-
-  segmentEndMonitorTimer = setInterval(() => {
-    if (!currentSegment || advancingAfterEnded || countdownActive) {
-      return;
-    }
-
-    const end = getActiveSegmentEndSeconds();
-
-    if (end === null) {
-      refreshSegmentEndInput();
-      return;
-    }
-
-    const current = getCurrentVideoTime();
-
-    if (current >= end - 0.2) {
-      finishCurrentSegment();
-    }
-  }, 250);
 }
 
 function parseTimeString(text) {
@@ -1170,11 +865,23 @@ function jumpToExactTime() {
     return;
   }
 
-  const start = getSegmentStartSeconds(currentSegment);
-  const end = getActiveSegmentEndSeconds() || duration;
-  const target = Math.max(start, Math.min(end, seconds));
+  const target =
+    Math.max(0, Math.min(duration, seconds));
 
-  seekToTime(target);
+  if (currentMode === 'youtube') {
+    player.seekTo(target, true);
+  }
+
+  if (currentMode === 'html') {
+    const video =
+      document.getElementById('htmlVideo');
+
+    if (video) {
+      video.currentTime = target;
+    }
+  }
+
+  updateSkipButtons();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1196,19 +903,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-
-  const endInput = document.getElementById('segmentEndTimeInput');
-
-  if (endInput) {
-    endInput.addEventListener('blur', validateManualSegmentEnd);
-    endInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        validateManualSegmentEnd();
-      }
-    });
-  }
-
-  startSegmentEndMonitor();
 });
 
 setupOpenFullButton();
