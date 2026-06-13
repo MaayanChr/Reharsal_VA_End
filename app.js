@@ -982,22 +982,6 @@ function refreshSegmentEndInput() {
     input.value = '';
   }
 }
-  const input = document.getElementById('segmentEndTimeInput');
-
-	if (!input || manualSegmentEndSeconds !== null || document.activeElement === input) {
-	  return;
-	}
-
-  const end = getDefaultSegmentEndSeconds();
-
-	if (getSegmentDataEndSeconds(currentSegment) === -1) {
-	  input.value = '';
-	} else if (end !== null) {
-	  input.value = formatTime(end);
-	} else {
-	  input.value = '';
-	}
-}
 
 function validateManualSegmentEnd() {
   const input = document.getElementById('segmentEndTimeInput');
@@ -1016,20 +1000,14 @@ function validateManualSegmentEnd() {
 
   const seconds = parseTimeString(text);
   const start = getSegmentStartSeconds(currentSegment);
-  const duration = getVideoDuration();
+  const maxEnd = getDefaultSegmentEndSeconds();
 
-  if (seconds === null || seconds <= start) {
+  if (seconds === null || seconds <= start || (maxEnd !== null && seconds > maxEnd)) {
     input.classList.add('invalid');
     manualSegmentEndSeconds = null;
-    alert(`זמן הסיום חייב להיות גדול מ-${formatTime(start)}.`);
+    refreshSegmentEndInput();
+    alert(`זמן הסיום חייב להיות גדול מ-${formatTime(start)} ולא גדול מ-${formatTime(maxEnd || start)}.`);
     return false;
-  }
-
-  if (duration && seconds > duration) {
-    manualSegmentEndSeconds = duration;
-    input.value = formatTime(duration);
-    input.classList.remove('invalid');
-    return true;
   }
 
   manualSegmentEndSeconds = seconds;
@@ -1037,6 +1015,7 @@ function validateManualSegmentEnd() {
   input.classList.remove('invalid');
   return true;
 }
+
 function seekToTime(seconds) {
   if (currentMode === 'youtube' && player && typeof player.seekTo === 'function') {
     player.seekTo(seconds, true);
@@ -1167,8 +1146,9 @@ function startSegmentEndMonitor() {
     const end = getActiveSegmentEndSeconds();
 
     if (end === null) {
-		return;
-	}
+      refreshSegmentEndInput();
+      return;
+    }
 
     const current = getCurrentVideoTime();
 
