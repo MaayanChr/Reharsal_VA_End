@@ -1136,10 +1136,13 @@ function startSegmentEndMonitor() {
 
     const end = getActiveSegmentEndSeconds();
 
-    if (end === null) {
-      refreshSegmentEndInput();
-      return;
-    }
+	if (end === null) {
+	  const input = document.getElementById('segmentEndTimeInput');
+	  if (input) {
+		input.value = '';
+	  }
+	  return;
+	}
 
     const current = getCurrentVideoTime();
 
