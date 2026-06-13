@@ -967,11 +967,13 @@ function refreshSegmentEndInput() {
 
   const end = getDefaultSegmentEndSeconds();
 
-  if (end !== null) {
-    input.value = formatTime(end);
-  } else {
-    input.value = '';
-  }
+	if (getSegmentDataEndSeconds(currentSegment) === -1) {
+	  input.value = 'סוף';
+	} else if (end !== null) {
+	  input.value = formatTime(end);
+	} else {
+	  input.value = '';
+	}
 }
 
 function validateManualSegmentEnd() {
