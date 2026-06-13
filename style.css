@@ -341,6 +341,7 @@ button:hover:not(:disabled) {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+  direction: rtl;
 }
 
 #jumpToTimeInput {
