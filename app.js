@@ -908,28 +908,27 @@ function getDefaultSegmentEndSeconds() {
 
   const start = getSegmentStartSeconds(currentSegment);
   const duration = getVideoDuration();
-  const candidates = [];
-
   const dataEnd = getSegmentDataEndSeconds(currentSegment);
+
+  // end: -1 means: ignore the next segment and continue to the end of the source.
+  if (dataEnd === -1) {
+    return duration && duration > start ? duration : null;
+  }
+
+  // Explicit end in the data file is the controlling end time.
+  if (dataEnd !== null && dataEnd > start) {
+    return dataEnd;
+  }
+
+  // No end in data file: stop one second before the next segment on the same source,
+  // or at the source end if there is no next segment on the same source.
   const nextGapEnd = getNextSegmentStartMinusGap();
 
-  if (dataEnd === -1) {
-    if (duration && duration > start) {
-      candidates.push(duration);
-    }
-  } else if (dataEnd !== null && dataEnd > start) {
-    candidates.push(dataEnd);
-  }
-
   if (nextGapEnd !== null && nextGapEnd > start) {
-    candidates.push(nextGapEnd);
+    return nextGapEnd;
   }
 
-  if (duration && duration > start) {
-    candidates.push(duration);
-  }
-
-  return candidates.length ? Math.min(...candidates) : null;
+  return duration && duration > start ? duration : null;
 }
 
 function getActiveSegmentEndSeconds() {
