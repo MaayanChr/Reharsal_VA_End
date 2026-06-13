@@ -969,6 +969,8 @@ function refreshSegmentEndInput() {
 
   if (end !== null) {
     input.value = formatTime(end);
+  } else {
+    input.value = '';
   }
 }
 
