@@ -1046,6 +1046,19 @@ function pauseCurrentMedia() {
   }
 }
 
+function playCurrentMedia() {
+  if (currentMode === 'youtube' && player && typeof player.playVideo === 'function') {
+    player.playVideo();
+  }
+
+  if (currentMode === 'html') {
+    const video = document.getElementById('htmlVideo');
+    if (video) {
+      video.play();
+    }
+  }
+}
+
 function finishCurrentSegment() {
   if (advancingAfterEnded || countdownActive) {
     return;
@@ -1188,16 +1201,17 @@ function parseTimeString(text) {
 }
 
 function jumpToExactTime() {
-
-  const input =
-    document.getElementById('jumpToTimeInput');
+  const input = document.getElementById('jumpToTimeInput');
 
   if (!input) {
     return;
   }
 
-  const seconds =
-    parseTimeString(input.value);
+  if (!validateManualSegmentEnd()) {
+    return;
+  }
+
+  const seconds = parseTimeString(input.value);
 
   if (seconds === null) {
     return;
@@ -1213,7 +1227,15 @@ function jumpToExactTime() {
   const end = getActiveSegmentEndSeconds() || duration;
   const target = Math.max(start, Math.min(end, seconds));
 
+  countdownActive = true;
+  pauseCurrentMedia();
   seekToTime(target);
+
+  showCountdown(3, () => {
+    seekToTime(target);
+    countdownActive = false;
+    playCurrentMedia();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
