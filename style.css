@@ -357,6 +357,43 @@ button:hover:not(:disabled) {
   border-radius: 6px;
 }
 
+.video-wrapper {
+  position: relative;
+}
+
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(64px, 18vw, 180px);
+  font-weight: bold;
+  color: white;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.countdown-overlay.show {
+  display: flex;
+}
+
+.end-time-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#segmentEndTimeInput {
+  width: 52px;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 12px;
+  padding: 3px 4px;
+}
+
 @media (max-width: 800px) {
   #jumpToTimeContainer {
     display: none;
@@ -1099,5 +1136,40 @@ button:hover:not(:disabled) {
   #segmentButtons.segment-buttons-ltr .segment-button {
     direction: ltr;
     text-align: left;
+  }
+}
+
+#segmentEndTimeInput.invalid {
+  border-color: #b00020;
+  background: #fff1f2;
+}
+
+/* זמן סיום קטע - מוצג גם בטלפון */
+@media (max-width: 800px) {
+  #jumpToTimeContainer {
+    display: flex !important;
+    grid-area: jump;
+    justify-self: start;
+  }
+
+  .player-toolbar {
+    grid-template-areas:
+      "title positive"
+      "jump jump"
+      "negative negative";
+  }
+}
+
+@media (max-width: 950px) and (max-height: 520px) and (orientation: landscape) {
+  #jumpToTimeContainer {
+    display: flex !important;
+    grid-area: jump;
+    justify-self: start;
+  }
+
+  .player-toolbar {
+    grid-template-areas:
+      "title skips"
+      "jump skips";
   }
 }
